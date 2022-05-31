@@ -114,29 +114,23 @@ public class MainController implements Initializable {
         if (selectedItem == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING,
                     "Please first select a part.");
-
             alert.setTitle("Delete Warning");
             alert.showAndWait();
-            return;
+        } else {
+            ButtonType delete = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Are you sure you want to delete this part?",
+                    delete,
+                    cancel);
+
+            alert.setTitle("Delete Confirmation");
+            alert.showAndWait()
+                    .filter(response -> response == delete)
+                    .ifPresent(response -> {
+                        Inventory.deletePart(selectedItem);
+                    });
         }
-
-        // alert user if nothing was selected
-
-        // confirm deletion
-        ButtonType delete = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
-        ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-        Alert alert = new Alert(Alert.AlertType.WARNING,
-                "Are you sure you want to delete this part?",
-                delete,
-                cancel);
-
-        alert.setTitle("Delete Confirmation");
-        alert.showAndWait()
-                .filter(response -> response == delete)
-                .ifPresent(response -> {
-                    Inventory.deletePart(selectedItem);
-                });
-        // use inventory class
     }
 
     @FXML
