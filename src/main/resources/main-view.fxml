@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="535.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.wgu.inventorytracker.controllers.MainController">
+    <Label layoutX="28.0" layoutY="14.0" text="Inventory Management System">
+        <font>
+            <Font name="System Bold" size="18.0"/>
+        </font>
+    </Label>
+    <HBox layoutY="41.0" prefHeight="450" prefWidth="1200" spacing="45.0" style="-fx-padding: 25;">
+        <Pane prefHeight="250" prefWidth="600" style="-fx-border-color: black; -fx-border-radius: 10,10,10,10;">
+            <Label layoutX="14.0" layoutY="23.0" text="Parts">
+                <font>
+                    <Font name="System Bold" size="14.0"/>
+                </font>
+            </Label>
+            <TextField fx:id="partFilter" layoutX="383.0" layoutY="19.0" onKeyReleased="#filterPartTable"
+                       prefHeight="25.0" prefWidth="157.0" promptText="Search by Part ID or Name"/>
+            <TableView fx:id="partTable" layoutX="10.0" layoutY="60.0" prefHeight="295.0" prefWidth="533.0">
+                <columns>
+                    <TableColumn fx:id="partId" prefWidth="73.0" text="Part ID"/>
+                    <TableColumn fx:id="partName" prefWidth="193.0" text="Part Name"/>
+                    <TableColumn fx:id="partStock" prefWidth="133.0" text="Inventory Level"/>
+                    <TableColumn fx:id="partPrice" prefWidth="133.0" text="Price/Cost per Unit"/>
+                </columns>
+            </TableView>
+            <Button id="addPartButton" fx:id="addPartButton" layoutX="382.0" layoutY="365.0" mnemonicParsing="false"
+                    onAction="#addPartView" text="Add"/>
+            <Button id="modifyPartButton" fx:id="modifyPartButton" layoutX="429.0" layoutY="365.0"
+                    mnemonicParsing="false" text="Modify" onAction="#modifyPart"/>
+            <Button id="deletePartButton" fx:id="deletePartButton" layoutX="490.0" layoutY="365.0"
+                    mnemonicParsing="false" onAction="#deletePart" text="Delete"/>
+        </Pane>
+        <Pane prefHeight="250" prefWidth="600" style="-fx-border-color: black; -fx-border-radius: 10,10,10,10;">
+            <Label layoutX="14.0" layoutY="23.0" text="Products">
+                <font>
+                    <Font name="System Bold" size="14.0"/>
+                </font>
+            </Label>
+            <TextField fx:id="productFilter" layoutX="367.0" layoutY="19.0" onKeyReleased="#filterProductTable"
+                       prefHeight="25.0" prefWidth="173.0" promptText="Search By Product ID or Name"/>
+            <TableView fx:id="productTable" layoutX="10.0" layoutY="60.0" prefHeight="295.0" prefWidth="533.0">
+                <columns>
+                    <TableColumn fx:id="productId" prefWidth="73.0" text="Product ID"/>
+                    <TableColumn fx:id="productName" prefWidth="193.0" text="Product Name"/>
+                    <TableColumn fx:id="productStock" prefWidth="133.0" text="Inventory Level"/>
+                    <TableColumn fx:id="productPrice" prefWidth="133.0" text="Price/Cost per Unit"/>
+                </columns>
+            </TableView>
+            <Button id="addProductButton" fx:id="addProductButton" layoutX="382.0" layoutY="365.0"
+                    mnemonicParsing="false" onAction="#addProductView" text="Add"/>
+            <Button id="modifyProductButton" fx:id="modifyProductButton" layoutX="429.0" layoutY="365.0"
+                    mnemonicParsing="false" text="Modify"/>
+            <Button id="deletePartButton" fx:id="deleteProductButton" layoutX="490.0" layoutY="365.0"
+                    mnemonicParsing="false" onAction="#deleteProduct" text="Delete"/>
+        </Pane>
+    </HBox>
+    <Button fx:id="exitApplicationButton" layoutX="1087.0" layoutY="491.0" mnemonicParsing="false"
+            onAction="#exitApplication" prefHeight="26.0" prefWidth="88.0" text="Exit"/>
+</AnchorPane>
