@@ -69,6 +69,11 @@ public class MainController implements Initializable {
 
     @FXML
     private void filterPartTable(KeyEvent event) {
+        if (partFilter.getText().trim().equals("")) {
+            partTable.setItems(Inventory.getAllParts());
+            return;
+        }
+
         // need to highlight when found by id
         ObservableList<Part> filteredParts = Inventory.getAllParts().filtered(part -> {
             try {
@@ -80,12 +85,14 @@ public class MainController implements Initializable {
             }
         });
 
-        if (partFilter.getText().trim().equals("")) {
-            partTable.setItems(Inventory.getAllParts());
-            return;
-        }
-
         partTable.setItems(filteredParts);
+
+        if (filteredParts.size() == 0) {
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setHeaderText("Couldn't Find Product");
+            errorAlert.setContentText("Sorry, \"" + partFilter.getText() + "\" was not found.");
+            errorAlert.showAndWait();
+        }
     }
 
     @FXML
@@ -106,6 +113,13 @@ public class MainController implements Initializable {
         }
 
         productTable.setItems(filteredProducts);
+
+        if (filteredProducts.size() == 0) {
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setHeaderText("Couldn't Find Product");
+            errorAlert.setContentText("Sorry, \"" + productFilter.getText() + "\" was not found.");
+            errorAlert.showAndWait();
+        }
     }
 
     @FXML
@@ -136,27 +150,81 @@ public class MainController implements Initializable {
     @FXML
     private void deleteProduct(ActionEvent event) {
         Product selectedItem = productTable.getSelectionModel().getSelectedItem();
-        Inventory.deleteProduct(selectedItem);
+        if (selectedItem == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Please first select a product.");
+            alert.setTitle("Delete Warning");
+            alert.showAndWait();
+        } else {
+            ButtonType delete = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Are you sure you want to delete this product?",
+                    delete,
+                    cancel);
+
+            alert.setTitle("Delete Confirmation");
+            alert.showAndWait()
+                    .filter(response -> response == delete)
+                    .ifPresent(response -> {
+                        Inventory.deleteProduct(selectedItem);
+                    });
+        }
     }
 
     @FXML
     private void modifyPart(ActionEvent event) throws IOException {
         Part selectedItem = partTable.getSelectionModel().getSelectedItem();
-        disablePartButtons();
+        if (selectedItem == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Please first select a part.");
+            alert.setTitle("Delete Warning");
+            alert.showAndWait();
+        } else {
+            disablePartButtons();
 
-        Stage newWindow = new Stage();
-        newWindow.setTitle("Modify Part");
+            Stage newWindow = new Stage();
+            newWindow.setTitle("Modify Part");
 
-        FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("/add-or-modify-part-view.fxml"));
-        Parent root = loader.load();
-        AddOrModifyPartController controller = loader.getController();
-        controller.setPart(selectedItem);
-        controller.setModifying(true);
+            FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("/add-or-modify-part-view.fxml"));
+            Parent root = loader.load();
+            AddOrModifyPartController controller = loader.getController();
+            controller.setPart(selectedItem);
+            controller.setModifying(true);
 
-        newWindow.setScene(new Scene(root));
-        newWindow.showAndWait();
+            newWindow.setScene(new Scene(root));
+            newWindow.showAndWait();
 
-        enablePartButtons();
+            enablePartButtons();
+        }
+    }
+
+    @FXML
+    private void modifyProduct(ActionEvent event) throws IOException {
+        Product selectedItem = productTable.getSelectionModel().getSelectedItem();
+        if (selectedItem == null) {
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Please first select a product.");
+            alert.setTitle("Delete Warning");
+            alert.showAndWait();
+        } else {
+            disablePartButtons();
+
+            Stage newWindow = new Stage();
+            newWindow.setTitle("Modify Product");
+
+            FXMLLoader loader = new FXMLLoader(InventoryApplication.class.getResource("/add-or-modify-product-view.fxml"));
+            Parent root = loader.load();
+            AddOrModifyProductController controller = loader.getController();
+            controller.setProduct(selectedItem);
+            controller.setIsModifying(true);
+            controller.setupForm();
+
+            newWindow.setScene(new Scene(root));
+            newWindow.showAndWait();
+
+            enablePartButtons();
+        }
     }
 
     @FXML

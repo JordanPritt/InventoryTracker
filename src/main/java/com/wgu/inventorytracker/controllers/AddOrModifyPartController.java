@@ -120,11 +120,13 @@ public class AddOrModifyPartController implements Initializable {
         partMin.setText(String.valueOf(partToModify.getMin()));
         partMax.setText(String.valueOf(partToModify.getMax()));
 
-        if (partToModify.getClass() == InHouse.class) {
+        if (partToModify instanceof InHouse) {
             InHouse part = (InHouse) partToModify;
             partMachineOrCompanyName.setText(String.valueOf(part.getMachineId()));
         } else {
             Outsourced part = (Outsourced) partToModify;
+            machineIdRadio.setSelected(true);
+            machineOrCompanyNameLabel.setText("Company Name");
             partMachineOrCompanyName.setText(part.getCompanyName());
         }
     }

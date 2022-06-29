@@ -31,7 +31,7 @@
             <Button id="addPartButton" fx:id="addPartButton" layoutX="382.0" layoutY="365.0" mnemonicParsing="false"
                     onAction="#addPartView" text="Add"/>
             <Button id="modifyPartButton" fx:id="modifyPartButton" layoutX="429.0" layoutY="365.0"
-                    mnemonicParsing="false" text="Modify" onAction="#modifyPart"/>
+                    mnemonicParsing="false" onAction="#modifyPart" text="Modify"/>
             <Button id="deletePartButton" fx:id="deletePartButton" layoutX="490.0" layoutY="365.0"
                     mnemonicParsing="false" onAction="#deletePart" text="Delete"/>
         </Pane>
@@ -54,7 +54,7 @@
             <Button id="addProductButton" fx:id="addProductButton" layoutX="382.0" layoutY="365.0"
                     mnemonicParsing="false" onAction="#addProductView" text="Add"/>
             <Button id="modifyProductButton" fx:id="modifyProductButton" layoutX="429.0" layoutY="365.0"
-                    mnemonicParsing="false" text="Modify"/>
+                    mnemonicParsing="false" onAction="#modifyProduct" text="Modify"/>
             <Button id="deletePartButton" fx:id="deleteProductButton" layoutX="490.0" layoutY="365.0"
                     mnemonicParsing="false" onAction="#deleteProduct" text="Delete"/>
         </Pane>
