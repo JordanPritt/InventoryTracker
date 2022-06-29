@@ -1,9 +1,9 @@
 /**
-* Supplied class Part.java 
+ * Supplied class Part.java
  */
 package com.wgu.inventorytracker.models;
+
 /**
- *
  * @author Jordan Pritt
  */
 public abstract class Part {
@@ -12,7 +12,8 @@ public abstract class Part {
     private double price;
     private int stock;
     private int min;
-    private int max;    
+    private int max;
+
     public Part(int id, String name, double price, int stock, int min, int max) {
         this.id = id;
         this.name = name;
@@ -63,7 +64,7 @@ public abstract class Part {
     public void setPrice(double price) {
         this.price = price;
     }
-    
+
     /**
      * @return the stock
      */
@@ -105,5 +106,5 @@ public abstract class Part {
     public void setMax(int max) {
         this.max = max;
     }
-    
+
 }

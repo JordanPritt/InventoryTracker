@@ -17,7 +17,12 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import static com.wgu.inventorytracker.utils.Helpers.getFilteredParts;
+import static com.wgu.inventorytracker.utils.Helpers.isEmptySearch;
+
 /**
+ * A class to control the routes and logic for adding or modifying a Product.
+ * <p>
  * FUTURE ENHANCEMENT for Section B second bullet point:
  * Could separate this file out into two separate UIs and a service class that houses shared logic. The benefit to this
  * enhancement would be to have fewer flags to check for in the logic body.
@@ -40,8 +45,6 @@ public class AddOrModifyProductController implements Initializable {
     @FXML
     private TableColumn<Part, Integer> associatedPartPrice;
     @FXML
-    private Label formLabel;
-    @FXML
     private TextField prodId;
     @FXML
     private TextField prodName;
@@ -60,44 +63,27 @@ public class AddOrModifyProductController implements Initializable {
     @FXML
     private TableView<Part> associatedPartTable;
     @FXML
-    private Button addPartButton;
-    @FXML
-    private Button removeAssociatedPartButton;
-    @FXML
     private Button cancelButton;
-    @FXML
-    private Button saveButton;
 
     private Product product;
     private Product newProduct = new Product(generateOrGetId(), null, 0, 0, 0, 0);
     private boolean isModifying;
 
     @FXML
-    private void filterPartTable(KeyEvent event) {
-        if (partSearchText.getText().trim().equals("")) {
+    private void filterPartTable(KeyEvent ignoredEvent) {
+        if (isEmptySearch(partSearchText)) {
             partTable.setItems(Inventory.getAllParts());
-            return;
-        }
+        } else {
+            ObservableList<Part> filteredParts = getFilteredParts(partSearchText);
 
-        ObservableList<Part> filteredParts = Inventory.getAllParts().filtered(part -> {
-            try {
-                if (part.getName().toLowerCase().contains(partSearchText.getText().toLowerCase())) {
-                    return true;
-                } else {
-                    return part.getId() == Integer.parseInt(partSearchText.getText());
-                }
-            } catch (NumberFormatException ex) {
-                return false;
+            if (filteredParts.size() == 0) {
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                errorAlert.setHeaderText("Couldn't Find Part");
+                errorAlert.setContentText("Sorry, " + partSearchText.getText() + " was not found.");
+                errorAlert.showAndWait();
+            } else {
+                partTable.setItems(filteredParts);
             }
-        });
-
-        partTable.setItems(filteredParts);
-
-        if (filteredParts.size() == 0) {
-            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-            errorAlert.setHeaderText("Couldn't Find Part");
-            errorAlert.setContentText("Sorry, " + partSearchText.getText() + " was not found.");
-            errorAlert.showAndWait();
         }
     }
 
@@ -108,6 +94,9 @@ public class AddOrModifyProductController implements Initializable {
                 newProduct = product;
                 newProduct.setId(generateOrGetId());
             }
+
+            if (Integer.parseInt(prodMin.getText()) > Integer.parseInt(prodMax.getText()))
+                throw new IllegalArgumentException("Min cannot exceed Max value.");
 
             newProduct.setName(prodName.getText());
             newProduct.setPrice(Double.parseDouble(prodPrice.getText()));
@@ -121,6 +110,11 @@ public class AddOrModifyProductController implements Initializable {
                 Inventory.addProduct(newProduct);
 
             closeStage();
+        } catch (IllegalArgumentException ex) {
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setHeaderText("Couldn't Save Product");
+            errorAlert.setContentText("Please ensure that the Min field is less than the Max.");
+            errorAlert.showAndWait();
         } catch (Exception ex) {
             Alert errorAlert = new Alert(Alert.AlertType.ERROR);
             errorAlert.setHeaderText("Couldn't Save Product");
@@ -130,7 +124,7 @@ public class AddOrModifyProductController implements Initializable {
     }
 
     @FXML
-    private void cancelForm(ActionEvent event) {
+    private void cancelForm(ActionEvent ignoredEvent) {
         closeStage();
     }
 
@@ -138,12 +132,12 @@ public class AddOrModifyProductController implements Initializable {
      * RUNTIME ERROR for Section B first bullet:
      * Ran into an issue where there could be a duplicate part, to resolve this
      * I added a contains check that lets me prompt the user when they try to
-     * add in a duplicate item. This will avoid duplicates that are unecessary.
+     * add in a duplicate item. This will avoid duplicates that are necessary.
      *
-     * @param event
+     * @param ignoredEvent the event in the event handler.
      */
     @FXML
-    private void addPartToProduct(ActionEvent event) {
+    private void addPartToProduct(ActionEvent ignoredEvent) {
         try {
             Part selectedItem = partTable.getSelectionModel().getSelectedItem();
             boolean isDuplicate = product != null ? product.getAllAssociatedParts().contains(selectedItem) :
@@ -171,7 +165,7 @@ public class AddOrModifyProductController implements Initializable {
     }
 
     @FXML
-    private void removeAssociatedPart(ActionEvent event) {
+    private void removeAssociatedPart(ActionEvent ignoredEvent) {
         try {
             Part selectedItem = associatedPartTable.getSelectionModel().getSelectedItem();
 
@@ -182,11 +176,22 @@ public class AddOrModifyProductController implements Initializable {
                 errorAlert.showAndWait();
             }
 
-            if (isModifying) {
-                product.deleteAssociatedPart(selectedItem);
-            } else {
-                newProduct.deleteAssociatedPart(selectedItem);
-            }
+            ButtonType delete = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+            Alert alert = new Alert(Alert.AlertType.WARNING,
+                    "Are you sure you want to delete this part?",
+                    delete,
+                    cancel);
+
+            alert.setTitle("Delete Confirmation");
+            alert.showAndWait()
+                    .filter(response -> response == delete)
+                    .ifPresent(response -> {
+                        if (isModifying)
+                            product.deleteAssociatedPart(selectedItem);
+                        else
+                            newProduct.deleteAssociatedPart(selectedItem);
+                    });
         } catch (Exception ex) {
             Alert errorAlert = new Alert(Alert.AlertType.ERROR);
             errorAlert.setHeaderText("Could Not Remove Part");
@@ -195,27 +200,43 @@ public class AddOrModifyProductController implements Initializable {
         }
     }
 
+    /**
+     * Initializes the form.
+     *
+     * @param url            Provided url to view resource.
+     * @param resourceBundle Provided bundle.
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         partTable.setItems(Inventory.getAllParts());
-        partId.setCellValueFactory(new PropertyValueFactory<Part, Integer>("id"));
-        partName.setCellValueFactory(new PropertyValueFactory<Part, String>("name"));
-        partInv.setCellValueFactory(new PropertyValueFactory<Part, Integer>("stock"));
-        partPrice.setCellValueFactory(new PropertyValueFactory<Part, Integer>("price"));
+        partId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        partName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        partInv.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        partPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
 
         associatedPartTable.setItems(FXCollections.observableArrayList());
-        associatedPartId.setCellValueFactory(new PropertyValueFactory<Part, Integer>("id"));
-        associatedPartName.setCellValueFactory(new PropertyValueFactory<Part, String>("name"));
-        associatedPartInv.setCellValueFactory(new PropertyValueFactory<Part, Integer>("stock"));
-        associatedPartPrice.setCellValueFactory(new PropertyValueFactory<Part, Integer>("price"));
+        associatedPartId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        associatedPartName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        associatedPartInv.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        associatedPartPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
 
         prodId.setDisable(true);
     }
 
+    /**
+     * Sets the product to modify.
+     *
+     * @param product the provided product.
+     */
     public void setProduct(Product product) {
         this.product = product;
     }
 
+    /**
+     * Sets a flag to indicate if modify or not.
+     *
+     * @param isModifying boolean to flag with.
+     */
     public void setIsModifying(boolean isModifying) {
         this.isModifying = isModifying;
     }
@@ -230,6 +251,9 @@ public class AddOrModifyProductController implements Initializable {
         stage.close();
     }
 
+    /**
+     * Sets up the form with provided data or as a new addition.
+     */
     public void setupForm() {
         if (isModifying) {
             prodId.setText(String.valueOf(product.getId()));

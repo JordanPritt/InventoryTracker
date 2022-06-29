@@ -15,6 +15,10 @@ import javafx.stage.Stage;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+/**
+ * A class to control the routes and logic for adding or modifying
+ * a part with the associated view.
+ */
 public class AddOrModifyPartController implements Initializable {
 
     private Part partToModify = null;
@@ -49,18 +53,25 @@ public class AddOrModifyPartController implements Initializable {
     RadioButton machineIdRadio;
 
     @FXML
-    private void changeMachineOrCompanyName(ActionEvent event) {
+    private void changeMachineOrCompanyName(ActionEvent ignoredEvent) {
         if (inHouseRadio.isSelected()) machineOrCompanyNameLabel.setText("Machine ID");
         else machineOrCompanyNameLabel.setText("Company Name");
     }
 
     @FXML
-    private void savePart(ActionEvent event) {
+    private void savePart(ActionEvent ignoredEvent) {
         try {
-            boolean isInHouse = TryParse.isInt(partMachineOrCompanyName.getText());
+            //boolean isInHouse = TryParse.isInt(partMachineOrCompanyName.getText());
+            boolean isInHouse = inHouseRadio.isSelected();
             Part newPart;
 
+            if (Integer.parseInt(partMin.getText()) > Integer.parseInt(partMax.getText()))
+                throw new IllegalArgumentException("Please ensure that the Min field is less than the Max.");
+
             if (isInHouse) {
+                boolean idIsValid = TryParse.isInt(partMachineOrCompanyName.getText());
+                if (!idIsValid) throw new IllegalArgumentException("Please ensure that the Machine id is an int.");
+
                 newPart = new InHouse(
                         generateOrGetId(),
                         partName.getText(),
@@ -88,6 +99,11 @@ public class AddOrModifyPartController implements Initializable {
                 Inventory.addPart(newPart);
 
             closeStage();
+        } catch (IllegalArgumentException ex) {
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setHeaderText("Couldn't Save Part");
+            errorAlert.setContentText(ex.getMessage());
+            errorAlert.showAndWait();
         } catch (Exception ex) {
             Alert errorAlert = new Alert(Alert.AlertType.ERROR);
             errorAlert.setHeaderText("Incorrect Value");
@@ -98,7 +114,7 @@ public class AddOrModifyPartController implements Initializable {
     }
 
     @FXML
-    private void cancelAddPart(ActionEvent event) {
+    private void cancelAddPart(ActionEvent ignoredEvent) {
         closeStage();
     }
 
@@ -120,9 +136,9 @@ public class AddOrModifyPartController implements Initializable {
         partMin.setText(String.valueOf(partToModify.getMin()));
         partMax.setText(String.valueOf(partToModify.getMax()));
 
-        if (partToModify instanceof InHouse) {
-            InHouse part = (InHouse) partToModify;
+        if (partToModify instanceof InHouse part) {
             partMachineOrCompanyName.setText(String.valueOf(part.getMachineId()));
+            machineIdRadio.setSelected(false);
         } else {
             Outsourced part = (Outsourced) partToModify;
             machineIdRadio.setSelected(true);
@@ -131,16 +147,33 @@ public class AddOrModifyPartController implements Initializable {
         }
     }
 
+    /**
+     * Sets the part to be used with adding or modifying.
+     *
+     * @param part The part to set.
+     */
     public void setPart(Part part) {
         this.partToModify = part;
         if (part != null)
             setupForm();
     }
 
+    /**
+     * Sets the boolean to indicate if the form should be modifying
+     * an existing part or adding a new one.
+     *
+     * @param isModifying the boolean to indicate if modifying or not.
+     */
     public void setModifying(boolean isModifying) {
         this.isModifying = isModifying;
     }
 
+    /**
+     * Initializes the form.
+     *
+     * @param url            the provided url to resource.
+     * @param resourceBundle the provided resource bundle.
+     */
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         if (partToModify != null) {

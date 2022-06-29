@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import static com.wgu.inventorytracker.utils.Helpers.getFilteredParts;
+
+/**
+ * A class to control the routes and logic for the main screen.
+ */
+@SuppressWarnings("unchecked")
 public class MainController implements Initializable {
     @FXML
     private TableView<Part> partTable;
@@ -58,33 +64,21 @@ public class MainController implements Initializable {
     private Button deletePartButton;
     @FXML
     private Button deleteProductButton;
-    @FXML
-    private Button exitApplicationButton;
 
     @FXML
-    private void exitApplication(ActionEvent event) {
+    private void exitApplication(ActionEvent ignoredEvent) {
         Platform.exit();
         System.exit(0);
     }
 
     @FXML
-    private void filterPartTable(KeyEvent event) {
+    private void filterPartTable(KeyEvent ignoredEvent) {
         if (partFilter.getText().trim().equals("")) {
             partTable.setItems(Inventory.getAllParts());
             return;
         }
 
-        // need to highlight when found by id
-        ObservableList<Part> filteredParts = Inventory.getAllParts().filtered(part -> {
-            try {
-                if (part.getName().toLowerCase().contains(partFilter.getText().toLowerCase())) {
-                    return true;
-                } else return part.getId() == Integer.parseInt(partFilter.getText());
-            } catch (NumberFormatException ex) {
-                return false;
-            }
-        });
-
+        ObservableList<Part> filteredParts = getFilteredParts(partFilter);
         partTable.setItems(filteredParts);
 
         if (filteredParts.size() == 0) {
@@ -96,7 +90,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void filterProductTable(KeyEvent event) {
+    private void filterProductTable(KeyEvent ignoredEvent) {
         ObservableList<Product> filteredProducts = Inventory.getAllProducts().filtered(product -> {
             try {
                 if (product.getName().toLowerCase().contains(productFilter.getText().toLowerCase())) {
@@ -123,7 +117,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void deletePart(ActionEvent event) {
+    private void deletePart(ActionEvent ignoredEvent) {
         Part selectedItem = partTable.getSelectionModel().getSelectedItem();
         if (selectedItem == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING,
@@ -141,39 +135,46 @@ public class MainController implements Initializable {
             alert.setTitle("Delete Confirmation");
             alert.showAndWait()
                     .filter(response -> response == delete)
-                    .ifPresent(response -> {
-                        Inventory.deletePart(selectedItem);
-                    });
+                    .ifPresent(response -> Inventory.deletePart(selectedItem));
         }
     }
 
     @FXML
-    private void deleteProduct(ActionEvent event) {
-        Product selectedItem = productTable.getSelectionModel().getSelectedItem();
-        if (selectedItem == null) {
-            Alert alert = new Alert(Alert.AlertType.WARNING,
-                    "Please first select a product.");
-            alert.setTitle("Delete Warning");
-            alert.showAndWait();
-        } else {
-            ButtonType delete = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
-            ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-            Alert alert = new Alert(Alert.AlertType.WARNING,
-                    "Are you sure you want to delete this product?",
-                    delete,
-                    cancel);
+    private void deleteProduct(ActionEvent ignoredEvent) {
+        try {
+            Product selectedItem = productTable.getSelectionModel().getSelectedItem();
 
-            alert.setTitle("Delete Confirmation");
-            alert.showAndWait()
-                    .filter(response -> response == delete)
-                    .ifPresent(response -> {
-                        Inventory.deleteProduct(selectedItem);
-                    });
+            if (selectedItem == null) {
+                Alert alert = new Alert(Alert.AlertType.WARNING,
+                        "Please first select a product.");
+                alert.setTitle("Delete Warning");
+                alert.showAndWait();
+            } else {
+                if (selectedItem.getAllAssociatedParts().size() > 0)
+                    throw new IllegalArgumentException("Cannot delete product with parts.");
+
+                ButtonType delete = new ButtonType("Delete", ButtonBar.ButtonData.OK_DONE);
+                ButtonType cancel = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
+                Alert alert = new Alert(Alert.AlertType.WARNING,
+                        "Are you sure you want to delete this product?",
+                        delete,
+                        cancel);
+
+                alert.setTitle("Delete Confirmation");
+                alert.showAndWait()
+                        .filter(response -> response == delete)
+                        .ifPresent(response -> Inventory.deleteProduct(selectedItem));
+            }
+        } catch (IllegalArgumentException ex) {
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setHeaderText("Couldn't Delete Product");
+            errorAlert.setContentText("A product with associated parts cannot be deleted. Please remove parts first.");
+            errorAlert.showAndWait();
         }
     }
 
     @FXML
-    private void modifyPart(ActionEvent event) throws IOException {
+    private void modifyPart(ActionEvent ignoredEvent) throws IOException {
         Part selectedItem = partTable.getSelectionModel().getSelectedItem();
         if (selectedItem == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING,
@@ -200,7 +201,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void modifyProduct(ActionEvent event) throws IOException {
+    private void modifyProduct(ActionEvent ignoredEvent) throws IOException {
         Product selectedItem = productTable.getSelectionModel().getSelectedItem();
         if (selectedItem == null) {
             Alert alert = new Alert(Alert.AlertType.WARNING,
@@ -228,7 +229,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void addPartView(ActionEvent event) throws IOException {
+    private void addPartView(ActionEvent ignoredEvent) throws IOException {
         // disable buttons to prevent opening another scene;
         disablePartButtons();
 
@@ -242,7 +243,7 @@ public class MainController implements Initializable {
     }
 
     @FXML
-    private void addProductView(ActionEvent event) throws IOException {
+    private void addProductView(ActionEvent ignoredEvent) throws IOException {
         disableProductButtons();
         disablePartButtons();
 
@@ -257,22 +258,28 @@ public class MainController implements Initializable {
         enablePartButtons();
     }
 
+    /**
+     * Initializes the form.
+     *
+     * @param url            Provided url to resource for view.
+     * @param resourceBundle Provided resource bundle.
+     */
     @Override
     public void initialize(final URL url, final ResourceBundle resourceBundle) {
         partTable.setItems(Inventory.getAllParts());
 
-        partId.setCellValueFactory(new PropertyValueFactory<Part, Integer>("id"));
-        partName.setCellValueFactory(new PropertyValueFactory<Part, String>("name"));
-        partStock.setCellValueFactory(new PropertyValueFactory<Part, Integer>("stock"));
-        partPrice.setCellValueFactory(new PropertyValueFactory<Part, Integer>("price"));
+        partId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        partName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        partStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        partPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
         partTable.getColumns().setAll(partId, partName, partStock, partPrice);
 
         productTable.setItems(Inventory.getAllProducts());
 
-        productId.setCellValueFactory(new PropertyValueFactory<Product, Integer>("id"));
-        productName.setCellValueFactory(new PropertyValueFactory<Product, String>("name"));
-        productStock.setCellValueFactory(new PropertyValueFactory<Product, Integer>("stock"));
-        productPrice.setCellValueFactory(new PropertyValueFactory<Product, Integer>("price"));
+        productId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        productName.setCellValueFactory(new PropertyValueFactory<>("name"));
+        productStock.setCellValueFactory(new PropertyValueFactory<>("stock"));
+        productPrice.setCellValueFactory(new PropertyValueFactory<>("price"));
         productTable.getColumns().setAll(productId, productName, productStock, productPrice);
     }
 
